@@ -1,0 +1,51 @@
+version: "3.8"  
+services:
+  veritabani:
+    container_name: veritabani
+    image: mariadb:latest
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: secret
+      MYSQL_USER: secret
+      MYSQL_PASSWORD: secret
+    ports:
+      - '3309:3306'
+    volumes:
+      - ./php/50-server.cnf:/etc/mysql/mariadb.conf.d/50-server.cnf
+      - ./mariadb:/var/lib/mysql
+  phpmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    container_name: phpmin
+    ports:
+      - '8989:80'
+    volumes:
+      - ./php/phpmyadmin-misc.ini:/usr/local/etc/php/conf.d/phpmyadmin-misc.ini
+    links:
+      - veritabani
+    depends_on:
+      - veritabani
+    environment:
+      PMA_HOST: veritabani
+      PMA_PASSWORD: secret
+    restart: unless-stopped
+  larav:
+    container_name: larav
+    image: docker.io/bitnami/laravel:9
+    restart: unless-stopped
+    ports:
+      - '200:8000'
+    environment:
+      MYSQL_HOST: veritabani
+      MYSQL_PORT: 3306
+      MYSQL_USER: secret
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_PASSWORD: secret
+      MYSQL_DATABASE: secret
+    volumes:
+      - ./www:/usr/share/nginx/html
+      - './laravel:/app'
+    depends_on:
+      - veritabani
